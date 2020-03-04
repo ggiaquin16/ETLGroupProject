@@ -1,4 +1,5 @@
 import pandas as pd
+import json
 from pymongo import MongoClient
 
 def CleanData(rawImdbDF, rawRottenDF):
@@ -14,8 +15,6 @@ def CleanData(rawImdbDF, rawRottenDF):
     rottenTrimDF['audience_rating'] = rottenTrimDF['audience_rating'].astype(float)
     rottenTrimDF['audience_rating'] = rottenTrimDF['audience_rating'].div(10)
     rottenTrimDF['audience_count'] = rottenTrimDF['audience_count'].astype(int)
-    rottenTrimDF.reset_index(inplace=True)
-    imdbTrimDF.reset_index(inplace=True)
     return imdbTrimDF, rottenTrimDF
 
 def LoadCsv():
@@ -40,17 +39,19 @@ def MongoCollection(mongoDB):
     return imdbCollection, rottenCollection
 
 def MongoInsert(imdbCol, rottenCol, cleanImdbDF, cleanRottenDF):
-    imdbDict = cleanImdbDF.to_dict()
+    result = cleanImdbDF.to_json()
+    imdbDict = json.loads(result)
     imdbCol.insert_one(imdbDict)
 
-    rottenDict = cleanRottenDF.to_dict()
+    result = cleanRottenDF.to_json()
+    rottenDict = json.loads(result)
     rottenCol.insert_one(rottenDict)
 
 
 rawImdbDF, rawRottenDF = LoadCsv()
 
 cleanImdbDF, cleanRottenDF = CleanData(rawImdbDF, rawRottenDF)
-print(cleanImdbDF)
+
 mongoDB = MongoDBInit()
 
 imdbCol, rottenCol = MongoCollection(mongoDB)
